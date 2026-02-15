@@ -1,737 +1,825 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle, Circle, BarChart3, Users, Calendar, BookOpen, 
-  ArrowLeft, School, Check, X, ChevronDown, ChevronUp, 
-  Lightbulb, BrainCircuit, Target, Activity, GraduationCap, Layers,
-  Layout, Heart, Star, Compass, UserCheck, MessageCircle, ArrowRight
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ליווי והטמעה - דאשבורד מנהל</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-// --- MOCK DATA: Infrastructure ---
-const KAHAL_TASKS_INIT = [
-  { id: 1, task: "בחירת מקצועות לימוד", completed: true },
-  { id: 2, task: "הקצאת מורים (תצא\"מ ומיומנויות)", completed: true },
-  { id: 3, task: "מורים בחרו שער לימוד", completed: true },
-  { id: 4, task: "ביצוע הכשרה מקדימה למורים", completed: true },
-  { id: 5, task: "שיבוץ סדירות ליווי דו-חודשית", completed: false },
-  { id: 6, task: "הצגת התפיסה להורים", completed: false },
-];
+    <!-- Custom Font (Assistant) -->
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;600;700;800&display=swap" rel="stylesheet">
 
-const HQ_TASKS_INIT = [
-  { id: 101, task: "שיבוץ מלווים לקח\"ל", completed: true },
-  { id: 102, task: "שליחת חומרי לימוד וציוד", completed: false },
-];
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
 
-// --- MOCK DATA: Pedagogy (Cards) ---
-const GRADES_DATA = [
-  { id: 'z', name: "שכבה ז'", students: 126, teachers: 8, started: 102, startedPct: 81, progress: 12.9, avgGrade: 68, groups: 13, courses: 4 },
-  { id: 'h', name: "שכבה ח'", students: 537, teachers: 8, started: 537, startedPct: 100, progress: 1.8, avgGrade: 40, groups: 12, courses: 3 },
-  { id: 't', name: "שכבה ט'", students: 116, teachers: 6, started: 64, startedPct: 55, progress: 6.6, avgGrade: 28, groups: 8, courses: 3 },
-];
+        .gauge-container {
+            position: relative;
+            width: 100%;
+            height: 180px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
 
-const SUBJECTS_DATA = [
-  { id: 1, name: "אנגלית", students: 538, teachers: 4, started: 124, startedPct: 23, progress: 1.8, avgGrade: 70, groups: 9, courses: 12 },
-  { id: 2, name: "היסטוריה חמ\"ד", students: 181, teachers: 4, started: 145, startedPct: 80, progress: 19.7, avgGrade: 52, groups: 6, courses: 4 },
-  { id: 3, name: "מדעים", students: 101, teachers: 3, started: 69, startedPct: 68, progress: 22.6, avgGrade: 86, groups: 4, courses: 1 },
-  { id: 4, name: "תנ\"ך חמ\"ד", students: 285, teachers: 8, started: 197, startedPct: 69, progress: 13.0, avgGrade: 72, groups: 5, courses: 7 },
-  { id: 5, name: "תושב\"ע", students: 104, teachers: 4, started: 75, startedPct: 72, progress: 14.6, avgGrade: 89, groups: 4, courses: 1 },
-];
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 
-// --- MOCK DATA: Skills ---
-const SKILLS_DATA = [
-  { id: 1, name: "ניהול עצמי (תשפ\"ו)", grade: "שכבה ז'", students: 97, teachers: 1, started: 80, startedPct: 82, progress: 29.3, avgGrade: 85 },
-  { id: 2, name: "עבודת צוות", grade: "שכבה ח'", students: 150, teachers: 2, started: 45, startedPct: 30, progress: 12.0, avgGrade: 78 },
-  { id: 3, name: "חשיבה יצירתית", grade: "שכבה ט'", students: 110, teachers: 2, started: 100, startedPct: 91, progress: 45.5, avgGrade: 92 },
-  { id: 4, name: "תקשורת- העברת מסר", grade: "שכבה ז'", students: 126, teachers: 3, started: 10, startedPct: 8, progress: 2.0, avgGrade: 0 },
-];
-
-// --- MOCK DATA: Tzaam ---
-const TZAAM_DETAILED = {
-  questionnaires: [
-    { name: "שאלון 1: תחושת שייכות", completed: 85, target: 100 },
-    { name: "שאלון 2: מסוגלות עצמית", completed: 62, target: 100 },
-    { name: "שאלון 3: מוטיבציה", completed: 40, target: 100 },
-  ],
-  mentoring: {
-    personal: { planned: 450, executed: 320 },
-    group: { planned: 40, executed: 38 }
-  }
-};
-
-// --- Helper: Card Component matching the image ---
-const MetricCard = ({ title, students, teachers, started, startedPct, progress, avgGrade, extraInfo, subTitle, onClick }) => (
-  <div 
-    onClick={onClick}
-    className={`bg-white rounded-xl shadow-sm border border-slate-200 p-5 transition-all relative overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-md hover:border-indigo-300' : ''}`}
-  >
-    {/* Header */}
-    <div className="flex justify-between items-start mb-4">
-      <div>
-        <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-        {subTitle && <span className="text-xs text-slate-500">{subTitle}</span>}
-      </div>
-      <div className="flex gap-3 text-xs text-slate-500">
-        <div className="flex items-center gap-1"><Users size={14}/> {students} תלמידים</div>
-        <div className="flex items-center gap-1"><UserCheck size={14}/> {teachers} מורים</div>
-      </div>
-    </div>
-
-    {/* Big Number - Started */}
-    <div className="text-center mb-6">
-      <div className="text-4xl font-bold text-emerald-500">{started}</div>
-      <div className="text-sm text-slate-500">התחילו ({startedPct}%)</div>
-    </div>
-
-    {/* Progress Bars */}
-    <div className="space-y-4">
-      {/* Progress */}
-      <div>
-        <div className="flex justify-between text-xs mb-1">
-          <span className="text-slate-400">התקדמות ממוצעת:</span>
-          <span className="font-bold text-slate-700">{progress}%</span>
-        </div>
-        <div className="w-full bg-slate-100 rounded-full h-1.5">
-          <div className="bg-rose-400 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
-        </div>
-      </div>
-
-      {/* Grade */}
-      <div>
-        <div className="flex justify-between text-xs mb-1">
-          <span className="text-slate-400">ציון ממוצע:</span>
-          <span className="font-bold text-slate-700">{avgGrade > 10 ? avgGrade/10 : avgGrade}</span>
-        </div>
-        <div className="w-full bg-slate-100 rounded-full h-1.5">
-          <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: `${avgGrade > 10 ? avgGrade : avgGrade * 10}%` }}></div>
-        </div>
-      </div>
-    </div>
-
-    {/* Footer Info */}
-    {extraInfo && (
-      <div className="mt-6 pt-4 border-t border-slate-50 text-xs text-slate-400 flex justify-end gap-4">
-        {extraInfo}
-      </div>
-    )}
-  </div>
-);
-
-export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'infrastructure' | 'dashboard'
-  const [kahalTasks, setKahalTasks] = useState(KAHAL_TASKS_INIT);
-  const [isKahalCompleted, setIsKahalCompleted] = useState(false);
-
-  useEffect(() => {
-    const kahalDone = kahalTasks.every(t => t.completed);
-    setIsKahalCompleted(kahalDone);
-  }, [kahalTasks]);
-
-  const toggleKahalTask = (id) => {
-    setKahalTasks(prev => prev.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
-  };
-
-  return (
-    <div dir="rtl" className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      {/* Main Header */}
-      <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg text-white">
-              <School size={24} />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">מערכת ליווי והטמעה</h1>
-              <p className="text-xs text-slate-500">דמו למנהלי קהילות (קח"ל)</p>
-            </div>
-          </div>
-          
-          <div className="flex bg-slate-100 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveTab('infrastructure')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                activeTab === 'infrastructure' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <CheckCircle size={16} />
-              <span>תשתיות</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                activeTab === 'dashboard' 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <BarChart3 size={16} />
-              <span>דאשבורד פדגוגי</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'infrastructure' && (
-          <InfrastructureView 
-            kahalTasks={kahalTasks} 
-            toggleKahalTask={toggleKahalTask}
-            hqTasks={HQ_TASKS_INIT}
-            isKahalCompleted={isKahalCompleted}
-            onContinue={() => setActiveTab('dashboard')}
-          />
-        )}
-
-        {activeTab === 'dashboard' && (
-          <DashboardContainer />
-        )}
-      </main>
-    </div>
-  );
-}
-
-// --- Container for the Dashboard Sub-Navigation ---
-function DashboardContainer() {
-  const [subTab, setSubTab] = useState('overview'); // 'overview' | 'learning' | 'tzaam' | 'skills'
-
-  return (
-    <div className="space-y-6">
-      {/* Sub Navigation Bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex overflow-x-auto hide-scrollbar gap-2">
-        <NavButton active={subTab === 'overview'} onClick={() => setSubTab('overview')} icon={Layout} label="מבט על" />
-        <div className="w-px bg-slate-200 mx-2 my-1"></div>
-        <NavButton active={subTab === 'learning'} onClick={() => setSubTab('learning')} icon={BookOpen} label="למידה ופדגוגיה" />
-        <NavButton active={subTab === 'tzaam'} onClick={() => setSubTab('tzaam')} icon={Users} label="תצא&quot;מ" />
-        <NavButton active={subTab === 'skills'} onClick={() => setSubTab('skills')} icon={BrainCircuit} label="מיומנויות" />
-      </div>
-
-      {/* Content Rendering */}
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {subTab === 'overview' && <OverviewView onNavigate={setSubTab} />}
-        {subTab === 'learning' && <PedagogyDeepDive />}
-        {subTab === 'tzaam' && <TzaamDeepDive />}
-        {subTab === 'skills' && <SkillsDeepDive />}
-      </div>
-    </div>
-  );
-}
-
-// --- 1. Overview View ---
-function OverviewView({ onNavigate }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Quick Access Cards */}
-      <div onClick={() => onNavigate('learning')} className="cursor-pointer bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all group">
-        <div className="flex justify-between items-start mb-4">
-          <div className="bg-indigo-50 p-3 rounded-lg text-indigo-600 group-hover:bg-indigo-100 transition-colors">
-            <BookOpen size={24} />
-          </div>
-          <span className="text-2xl font-bold text-slate-800">68%</span>
-        </div>
-        <h3 className="font-bold text-slate-700 mb-1">למידה במקצועות</h3>
-        <p className="text-sm text-slate-500">פעילות בשערים ובמקצועות הליבה</p>
-      </div>
-
-      <div onClick={() => onNavigate('tzaam')} className="cursor-pointer bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all group">
-        <div className="flex justify-between items-start mb-4">
-          <div className="bg-emerald-50 p-3 rounded-lg text-emerald-600 group-hover:bg-emerald-100 transition-colors">
-            <Users size={24} />
-          </div>
-          <span className="text-2xl font-bold text-slate-800">82%</span>
-        </div>
-        <h3 className="font-bold text-slate-700 mb-1">מדד תצא"מ</h3>
-        <p className="text-sm text-slate-500">מענה שאלונים ושיחות מנטור</p>
-      </div>
-
-      <div onClick={() => onNavigate('skills')} className="cursor-pointer bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-300 transition-all group">
-        <div className="flex justify-between items-start mb-4">
-          <div className="bg-amber-50 p-3 rounded-lg text-amber-600 group-hover:bg-amber-100 transition-colors">
-            <BrainCircuit size={24} />
-          </div>
-          <span className="text-2xl font-bold text-slate-800">5</span>
-        </div>
-        <h3 className="font-bold text-slate-700 mb-1">קורסי מיומנויות</h3>
-        <p className="text-sm text-slate-500">נלמדים כעת בכלל השכבות</p>
-      </div>
-
-      {/* Timeline Placeholder */}
-      <div className="md:col-span-3 bg-white p-6 rounded-xl border border-slate-200">
-        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Calendar size={20} className="text-slate-400"/> אירועים קרובים
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-3 bg-slate-50 rounded-lg border-r-4 border-indigo-500">
-            <div className="text-xs text-slate-500">מרץ</div>
-            <div className="font-bold text-slate-700">בקרת שערים</div>
-          </div>
-          <div className="p-3 bg-slate-50 rounded-lg border-r-4 border-emerald-500">
-            <div className="text-xs text-slate-500">מרץ</div>
-            <div className="font-bold text-slate-700">שאלון מסוגלות</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- 2. Pedagogy Deep Dive ---
-function PedagogyDeepDive() {
-  const [viewMode, setViewMode] = useState('grades'); // 'grades' | 'subjects'
-
-  return (
-    <div className="space-y-12">
-      {/* SECTION 1: USAGE DATA (METRICS) */}
-      <div className="space-y-6">
-        {/* Header & Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">למידה ופדגוגיה</h2>
-            <p className="text-slate-500">מעקב אחר קורסים, הספקים וציונים שוטפים</p>
-          </div>
-          <div className="bg-slate-100 p-1 rounded-lg flex">
-            <button 
-              onClick={() => setViewMode('grades')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'grades' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
-            >
-              תצוגה לפי שכבות
-            </button>
-            <button 
-               onClick={() => setViewMode('subjects')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'subjects' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
-            >
-              תצוגה לפי מקצועות
-            </button>
-          </div>
-        </div>
-
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {viewMode === 'grades' ? (
-            GRADES_DATA.map(grade => (
-              <MetricCard 
-                key={grade.id}
-                title={grade.name}
-                students={grade.students}
-                teachers={grade.teachers}
-                started={grade.started}
-                startedPct={grade.startedPct}
-                progress={grade.progress}
-                avgGrade={grade.avgGrade}
-                extraInfo={
-                  <>
-                    <div className="flex items-center gap-1"><Layers size={14}/> {grade.courses} מקצועות</div>
-                    <div className="flex items-center gap-1"><Users size={14}/> {grade.groups} קבוצות</div>
-                  </>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5', // indigo-600
+                        secondary: '#10b981', // emerald-500
+                        accent: '#f59e0b', // amber-500
+                    }
                 }
-              />
-            ))
-          ) : (
-            SUBJECTS_DATA.map(subject => (
-              <MetricCard 
-                key={subject.id}
-                title={subject.name}
-                students={subject.students}
-                teachers={subject.teachers}
-                started={subject.started}
-                startedPct={subject.startedPct}
-                progress={subject.progress}
-                avgGrade={subject.avgGrade}
-                extraInfo={
-                  <>
-                    <div className="flex items-center gap-1"><BookOpen size={14}/> {subject.courses} קורסים</div>
-                    <div className="flex items-center gap-1"><Users size={14}/> {subject.groups} קבוצות</div>
-                  </>
-                }
-              />
-            ))
-          )}
-        </div>
-      </div>
+            }
+        }
+    </script>
+</head>
+<body class="text-slate-800">
 
-      {/* SECTION 2: THE WHOLE CHILD */}
-      <div className="pt-8 border-t border-slate-200">
-         <WholeChildView />
-      </div>
-    </div>
-  );
-}
-
-// --- 3. Tzaam Deep Dive ---
-function TzaamDeepDive() {
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-         <div>
-          <h2 className="text-2xl font-bold text-slate-900">תמונת מצב תצא"מ</h2>
-          <p className="text-slate-500">דיווח מנטורים ומענה שאלונים חברתיים-רגשיים</p>
-        </div>
-        <button className="text-indigo-600 text-sm font-bold hover:underline">ייצא דוח מפורט</button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Questionnaires Status */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <Activity className="text-emerald-500" size={20} />
-            סטטוס מענה שאלונים
-          </h3>
-          <div className="space-y-6">
-            {TZAAM_DETAILED.questionnaires.map((q, idx) => (
-              <div key={idx}>
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium text-slate-700">{q.name}</span>
-                  <span className="font-bold text-indigo-600">{q.completed}%</span>
+    <!-- Header -->
+    <header class="bg-white sticky top-0 z-40 shadow-sm border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-indigo-600 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-200">
+                    <i data-lucide="school" class="w-6 h-6"></i>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-3">
-                  <div 
-                    className={`h-3 rounded-full ${q.completed > 70 ? 'bg-emerald-500' : q.completed > 40 ? 'bg-amber-400' : 'bg-rose-400'}`} 
-                    style={{width: `${q.completed}%`}}
-                  ></div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">מערכת ליווי והטמעה</h1>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <p class="text-xs font-medium text-slate-500">מחובר: מנהל פדגוגי</p>
+                    </div>
                 </div>
-              </div>
-            ))}
-          </div>
+            </div>
+            
+            <div class="flex gap-4 items-center">
+                <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all relative">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm border border-indigo-200">
+                    ד
+                </div>
+            </div>
         </div>
+    </header>
 
-        {/* Mentoring Status */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <MessageCircle className="text-indigo-500" size={20} />
-            מפגשי מנטור
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-indigo-50 rounded-xl p-4 text-center border border-indigo-100">
-              <div className="text-sm text-indigo-700 mb-1 font-bold">מפגשים אישיים</div>
-              <div className="text-3xl font-bold text-indigo-900">{TZAAM_DETAILED.mentoring.personal.executed}</div>
-              <div className="text-xs text-indigo-400">מתוך {TZAAM_DETAILED.mentoring.personal.planned} מתוכננים</div>
-              <div className="mt-2 w-full bg-white h-1.5 rounded-full overflow-hidden">
-                <div className="bg-indigo-500 h-full" style={{width: `${(TZAAM_DETAILED.mentoring.personal.executed/TZAAM_DETAILED.mentoring.personal.planned)*100}%`}}></div>
-              </div>
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div class="flex justify-center">
+            <div class="bg-white rounded-full shadow-md border border-slate-100 p-1.5 inline-flex gap-1 overflow-x-auto">
+                <button onclick="switchTab('infrastructure')" id="tab-infrastructure" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap text-cyan-600 hover:bg-cyan-50">
+                    <i data-lucide="laptop" class="w-4 h-4"></i> תשתיות
+                </button>
+                <button onclick="switchTab('learning')" id="tab-learning" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap text-indigo-600 hover:bg-indigo-50">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> למידה
+                </button>
+                <button onclick="switchTab('tzaam')" id="tab-tzaam" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap text-emerald-600 hover:bg-emerald-50">
+                    <i data-lucide="users" class="w-4 h-4"></i> תצא"מ
+                </button>
+                <button onclick="switchTab('skills')" id="tab-skills" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap text-amber-600 hover:bg-amber-50">
+                    <i data-lucide="brain-circuit" class="w-4 h-4"></i> מיומנויות
+                </button>
             </div>
-             <div className="bg-emerald-50 rounded-xl p-4 text-center border border-emerald-100">
-              <div className="text-sm text-emerald-700 mb-1 font-bold">מפגשים קבוצתיים</div>
-              <div className="text-3xl font-bold text-emerald-900">{TZAAM_DETAILED.mentoring.group.executed}</div>
-              <div className="text-xs text-emerald-400">מתוך {TZAAM_DETAILED.mentoring.group.planned} מתוכננים</div>
-              <div className="mt-2 w-full bg-white h-1.5 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full" style={{width: `${(TZAAM_DETAILED.mentoring.group.executed/TZAAM_DETAILED.mentoring.group.planned)*100}%`}}></div>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
-  );
-}
 
-// --- 4. Skills Deep Dive & Drill Down ---
-function SkillsDeepDive() {
-  const [selectedSkill, setSelectedSkill] = useState(null);
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[600px]">
+        <div id="content-area" class="fade-in">
+            <!-- Content will be injected here by JS -->
+        </div>
+    </main>
 
-  return (
-    <div className="space-y-6">
-      {!selectedSkill ? (
-        // LIST VIEW
-        <>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">מיומנויות המאה ה-21</h2>
-            <p className="text-slate-500">מעקב אחר קורסי מיומנויות פעילים בחלוקה לשכבות. לחץ על כרטיס לפירוט.</p>
-          </div>
+    <!-- Modals Container -->
+    <div id="modal-container" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div id="modal-content" class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl pointer-events-auto transform transition-all scale-95 opacity-0">
+                <!-- Modal Body Injected Here -->
+            </div>
+        </div>
+    </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SKILLS_DATA.map((skill) => (
-              <MetricCard 
-                key={skill.id}
-                title={skill.name}
-                subTitle={skill.grade}
-                students={skill.students}
-                teachers={skill.teachers}
-                started={skill.started}
-                startedPct={skill.startedPct}
-                progress={skill.progress}
-                avgGrade={skill.avgGrade}
-                onClick={() => setSelectedSkill(skill)}
-                extraInfo={
-                  <div className="flex items-center gap-1 text-amber-600 font-medium">
-                    <Target size={14} /> קורס חובה (לחץ לצפייה)
-                  </div>
+    <script>
+        // --- DATA STORE ---
+        const DATA = {
+            chromebooks: {
+                total: 850,
+                active: 722,
+                percentage: 85,
+                breakdown: [
+                    { label: "שכבה ז'", value: 92 },
+                    { label: "שכבה ח'", value: 78 },
+                    { label: "שכבה ט'", value: 85 },
+                    { label: "שכבה י'", value: 88 },
+                ]
+            },
+            mentoring: {
+                disciplines: [
+                    { name: "מתמטיקה", meetings: 45, target: 50 },
+                    { name: "אנגלית", meetings: 38, target: 50 },
+                    { name: "מדעים", meetings: 42, target: 45 },
+                    { name: "היסטוריה", meetings: 25, target: 40 },
+                    { name: "תנ\"ך", meetings: 30, target: 35 },
+                ]
+            },
+            learning: {
+                loves: {
+                    score: 84,
+                    color: '#f43f5e',
+                    metrics: [
+                        { name: "תחושת שייכות", score: 88 },
+                        { name: "ביטחון ומוגנות", score: 92 },
+                        { name: "עניין וסקרנות", score: 75 },
+                        { name: "קשר עם מורים", score: 82 }
+                    ]
+                },
+                wants: {
+                    score: 76,
+                    color: '#f59e0b',
+                    metrics: [
+                        { name: "מסוגלות עצמית", score: 80 },
+                        { name: "הצבת יעדים", score: 65 },
+                        { name: "התמדה ומאמץ", score: 85 },
+                        { name: "Growth Mindset", score: 72 }
+                    ]
+                },
+                knows: {
+                    score: 68,
+                    color: '#6366f1',
+                    metrics: [
+                        { name: "ממוצע ציונים", score: 72 },
+                        { name: "הערכה חלופית", score: 65 },
+                        { name: "שליטה במיומנויות", score: 68 },
+                        { name: "הבנה עמוקה", score: 60 }
+                    ]
                 }
-              />
-            ))}
-          </div>
-        </>
-      ) : (
-        // DETAIL VIEW (Drill Down)
-        <div className="animate-in slide-in-from-right-4 duration-300">
-           {/* Detail Header */}
-           <div className="flex items-center gap-4 mb-8">
-             <button 
-               onClick={() => setSelectedSkill(null)}
-               className="p-2 rounded-full hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all"
-             >
-               <ArrowRight size={24} className="text-slate-600" />
-             </button>
-             <div>
-               <h2 className="text-2xl font-bold text-slate-900">{selectedSkill.name}</h2>
-               <p className="text-slate-500">{selectedSkill.grade} • {selectedSkill.students} תלמידים רשומים</p>
-             </div>
-           </div>
+            },
+            // Re-introduced Grades/Subjects data
+            pedagogy: {
+                grades: [
+                    { id: 'z', name: "שכבה ז'", students: 126, teachers: 8, started: 102, startedPct: 81, progress: 12.9, avgGrade: 68, groups: 13, courses: 4 },
+                    { id: 'h', name: "שכבה ח'", students: 537, teachers: 8, started: 537, startedPct: 100, progress: 1.8, avgGrade: 40, groups: 12, courses: 3 },
+                    { id: 't', name: "שכבה ט'", students: 116, teachers: 6, started: 64, startedPct: 55, progress: 6.6, avgGrade: 28, groups: 8, courses: 3 },
+                ],
+                subjects: [
+                    { id: 1, name: "אנגלית", students: 538, teachers: 4, started: 124, startedPct: 23, progress: 1.8, avgGrade: 70, groups: 9, courses: 12 },
+                    { id: 2, name: "היסטוריה חמ\"ד", students: 181, teachers: 4, started: 145, startedPct: 80, progress: 19.7, avgGrade: 52, groups: 6, courses: 4 },
+                    { id: 3, name: "מדעים", students: 101, teachers: 3, started: 69, startedPct: 68, progress: 22.6, avgGrade: 86, groups: 4, courses: 1 },
+                    { id: 4, name: "תנ\"ך חמ\"ד", students: 285, teachers: 8, started: 197, startedPct: 69, progress: 13.0, avgGrade: 72, groups: 5, courses: 7 },
+                    { id: 5, name: "תושב\"ע", students: 104, teachers: 4, started: 75, startedPct: 72, progress: 14.6, avgGrade: 89, groups: 4, courses: 1 },
+                ]
+            },
+            // Re-introduced Tzaam Data
+            tzaam: {
+                questionnaires: [
+                    { name: "שאלון 1: תחושת שייכות", completed: 85, target: 100 },
+                    { name: "שאלון 2: מסוגלות עצמית", completed: 62, target: 100 },
+                    { name: "שאלון 3: מוטיבציה", completed: 40, target: 100 },
+                ],
+                mentoring: {
+                    personal: { planned: 450, executed: 320 },
+                    group: { planned: 40, executed: 38 }
+                }
+            },
+            skills: {
+                embedded: [
+                    { skill: "אוריינות מידע", subject: "היסטוריה", grade: "ח'", status: 85 },
+                    { skill: "חשיבה ביקורתית", subject: "מדעים", grade: "ט'", status: 72 },
+                    { skill: "עבודת צוות", subject: "אנגלית", grade: "ז'", status: 90 },
+                ],
+                courses: [
+                    { name: "קורס ניהול זמן", students: 120, avg: 88 },
+                    { name: "קורס מייקרים", students: 45, avg: 95 },
+                    { name: "קורס דיבייט", students: 60, avg: 82 },
+                ]
+            }
+        };
 
-           {/* Detail Content (Mock Table) */}
-           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-             <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-               <h3 className="font-bold text-slate-700">רשימת תלמידים בקורס</h3>
-               <button className="text-xs font-bold text-indigo-600 hover:underline">ייצוא לאקסל</button>
-             </div>
-             <div className="overflow-x-auto">
-               <table className="w-full text-sm text-right">
-                 <thead className="bg-white text-slate-500 border-b border-slate-100">
-                   <tr>
-                     <th className="px-6 py-3 font-medium">שם התלמיד</th>
-                     <th className="px-6 py-3 font-medium">כיתה</th>
-                     <th className="px-6 py-3 font-medium">נוכחות</th>
-                     <th className="px-6 py-3 font-medium">הגשת מטלות</th>
-                     <th className="px-6 py-3 font-medium">ציון נוכחי</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-50">
-                   {/* Generating some dummy rows based on selected skill */}
-                   {[1, 2, 3, 4, 5].map((i) => (
-                     <tr key={i} className="hover:bg-slate-50/50">
-                       <td className="px-6 py-3 font-medium text-slate-700">תלמיד {i}</td>
-                       <td className="px-6 py-3 text-slate-500">{selectedSkill.grade} - {i}</td>
-                       <td className="px-6 py-3">
-                         <div className="flex items-center gap-2">
-                           <div className="w-16 bg-slate-100 rounded-full h-1.5">
-                             <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${80 + i*3}%`}}></div>
-                           </div>
-                           <span className="text-xs">{80 + i*3}%</span>
-                         </div>
-                       </td>
-                       <td className="px-6 py-3 text-slate-600">{i}/5 הוגשו</td>
-                       <td className="px-6 py-3 font-bold text-slate-700">{selectedSkill.avgGrade + (i % 2 === 0 ? 5 : -2)}</td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-             <div className="p-4 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-400">
-               מציג 5 מתוך {selectedSkill.students} תלמידים
-             </div>
-           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+        let currentTab = 'infrastructure';
+        let pedagogyViewMode = 'grades'; // 'grades' or 'subjects'
+        
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            switchTab('infrastructure');
+            lucide.createIcons();
+        });
 
-// --- 5. The Whole Child View (Integrated under Pedagogy) ---
-function WholeChildView() {
-  const [selectedPillar, setSelectedPillar] = useState(null);
+        // --- NAVIGATION LOGIC ---
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update Buttons State
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white', 'shadow-md', 'scale-105');
+                // Reset to default colors is handled by removing the active classes, assuming base classes are enough
+            });
 
-  const pillars = [
-    {
-      id: 'loves',
-      title: 'אוהב ללמוד',
-      icon: Heart,
-      color: 'rose',
-      metric: '84%',
-      desc: 'מעורבות רגשית, שייכות ומוטיבציה',
-      sections: [
-        {
-          title: 'הערכה אובייקטיבית',
-          items: [
-            { label: 'רגש', val: 'חיובי (85%)' },
-            { label: 'עניין', val: 'גבוה' },
-          ]
-        },
-        {
-          title: 'הערכה סובייקטיבית',
-          items: [
-             { label: 'הנאה מלמידה', val: '8.4/10' }
-          ]
+            // Set Active State
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.className = "nav-btn flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap bg-slate-800 text-white shadow-md transform scale-105";
+
+            // Render Content
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = '';
+            contentArea.classList.remove('fade-in');
+            void contentArea.offsetWidth; // trigger reflow
+            contentArea.classList.add('fade-in');
+
+            if (tabName === 'infrastructure') renderInfrastructure(contentArea);
+            if (tabName === 'learning') renderLearning(contentArea);
+            if (tabName === 'tzaam') renderTzaam(contentArea);
+            if (tabName === 'skills') renderSkills(contentArea);
+            
+            lucide.createIcons();
         }
-      ]
-    },
-    {
-      id: 'wants',
-      title: 'רוצה ללמוד',
-      icon: Star,
-      color: 'amber',
-      metric: '76%',
-      desc: 'הצבת יעדים, בחירה וסקרנות',
-      sections: [
-        {
-          title: 'הערכה אובייקטיבית',
-          items: [
-             { label: 'התמדה', val: '92%' },
-             { label: 'מעורבות', val: 'גבוהה' },
-             { label: 'איתגור עצמי', val: 'בינוני' }
-          ]
-        },
-        {
-          title: 'הערכה סובייקטיבית',
-          items: [
-             { label: 'מוטיבציה', val: '8.8/10' },
-             { label: 'תפיסת מאמץ', val: 'מותאם' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'knows',
-      title: 'יודע ללמוד',
-      icon: Compass,
-      color: 'indigo',
-      metric: '62%',
-      desc: 'מיומנויות למיד עצמאית והישגים',
-      sections: [
-        {
-          title: 'הערכה אובייקטיבית',
-          items: [
-            { label: 'הישגים (ציונים)', val: '82' },
-            { label: 'קצב התקדמות', val: 'תקין' }
-          ]
-        },
-        {
-          title: 'הערכה סובייקטיבית',
-          items: [
-             { label: 'מסוגלות עצמית', val: 'גבוהה' }
-          ]
-        }
-      ]
-    }
-  ];
 
-  return (
-    <div className="space-y-8">
-      <div className="text-center max-w-2xl mx-auto">
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">תמונת הילד השלם</h2>
-        <p className="text-slate-500">
-          מודל הוליסטי המשלב בין ההיבט הרגשי (אוהב), המוטיבציוני (רוצה) והקוגניטיבי (יודע).
-          לחץ על עמודה לצפייה בנתוני עומק.
-        </p>
-      </div>
+        // --- RENDERERS ---
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
-        {pillars.map((p) => (
-          <div 
-            key={p.id}
-            onClick={() => setSelectedPillar(selectedPillar === p.id ? null : p.id)}
-            className={`
-              cursor-pointer rounded-2xl p-8 border-2 transition-all duration-300 relative overflow-hidden group
-              ${selectedPillar === p.id ? `border-${p.color}-500 bg-${p.color}-50 shadow-xl scale-105` : `border-slate-100 bg-white hover:border-${p.color}-200 hover:shadow-lg`}
-            `}
-          >
-            <div className={`
-              absolute top-0 right-0 p-4 rounded-bl-3xl opacity-20
-              bg-${p.color}-500
-            `}>
-              <p.icon size={60} />
-            </div>
-
-            <div className="relative z-10">
-              <div className={`inline-flex p-3 rounded-xl mb-6 bg-${p.color}-100 text-${p.color}-600`}>
-                <p.icon size={32} />
-              </div>
-              
-              <h3 className="text-2xl font-bold text-slate-800 mb-1">{p.title}</h3>
-              <p className="text-slate-500 text-sm mb-6 h-10">{p.desc}</p>
-              
-              <div className="flex items-baseline gap-2 mb-6">
-                <span className={`text-5xl font-bold text-${p.color}-500`}>{p.metric}</span>
-                <span className="text-slate-400 font-medium">מדד משוקלל</span>
-              </div>
-
-              {selectedPillar === p.id && (
-                <div className="mt-6 pt-6 border-t border-slate-200 animate-in fade-in slide-in-from-top-2 text-right">
-                   {p.sections.map((section, idx) => (
-                     <div key={idx} className="mb-4">
-                       <h4 className="font-bold text-xs text-slate-400 uppercase mb-2 tracking-wider">{section.title}</h4>
-                       <div className="space-y-2">
-                         {section.items.map((item, i) => (
-                            <div key={i} className="flex justify-between items-center text-sm">
-                              <span className="text-slate-600">{item.label}</span>
-                              <span className="font-bold text-slate-800">{item.val}</span>
+        // 1. INFRASTRUCTURE RENDERER
+        function renderInfrastructure(container) {
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Chromebook Usage Card -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 relative overflow-hidden group">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">נתוני שימוש בכרומבוקים</h3>
+                                <p class="text-slate-500 text-sm">אחוז תלמידים פעילים (יומי)</p>
                             </div>
-                         ))}
-                       </div>
-                     </div>
-                   ))}
-                  <button className={`w-full mt-2 py-2 rounded-lg font-bold text-sm bg-${p.color}-200 text-${p.color}-800 hover:bg-${p.color}-300 transition-colors`}>
-                    צפה ברשימת תלמידים
-                  </button>
+                            <div class="p-3 bg-cyan-50 text-cyan-600 rounded-xl">
+                                <i data-lucide="laptop" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-8">
+                            <div class="relative w-32 h-32">
+                                <canvas id="chart-chromebook"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span class="text-3xl font-extrabold text-slate-800">${DATA.chromebooks.percentage}%</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-3xl font-bold text-slate-800 mb-1">${DATA.chromebooks.active}</div>
+                                <div class="text-sm text-slate-500 mb-4">תלמידים מחוברים היום</div>
+                                <button onclick="openChromebookModal()" class="text-cyan-600 font-bold text-sm hover:underline flex items-center gap-1">
+                                    לחץ לפילוח שכבתי <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mentoring Card -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 relative">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">ליווי פדגוגי</h3>
+                                <p class="text-slate-500 text-sm">כמות מפגשי ליווי לפי דיסציפלינה</p>
+                            </div>
+                            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                                <i data-lucide="users" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+                        <div class="h-48 w-full">
+                            <canvas id="chart-mentoring"></canvas>
+                        </div>
+                    </div>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+            `;
 
-// --- Helper Components ---
+            // Draw Charts
+            new Chart(document.getElementById('chart-chromebook'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['פעילים', 'לא פעילים'],
+                    datasets: [{
+                        data: [DATA.chromebooks.percentage, 100 - DATA.chromebooks.percentage],
+                        backgroundColor: ['#06b6d4', '#ecfeff'],
+                        borderWidth: 0,
+                        cutout: '85%',
+                        borderRadius: 10
+                    }]
+                },
+                options: { plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+            });
 
-function NavButton({ active, onClick, icon: Icon, label, color }) {
-  const activeClass = active 
-    ? 'bg-slate-800 text-white shadow-md' 
-    : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700';
-  
-  return (
-    <button 
-      onClick={onClick}
-      className={`
-        flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
-        ${activeClass}
-        ${color && !active ? color : ''}
-      `}
-    >
-      <Icon size={16} className={color && active ? 'text-rose-300' : ''} />
-      <span>{label}</span>
-    </button>
-  );
-}
+            new Chart(document.getElementById('chart-mentoring'), {
+                type: 'bar',
+                data: {
+                    labels: DATA.mentoring.disciplines.map(d => d.name),
+                    datasets: [{
+                        label: 'בוצעו',
+                        data: DATA.mentoring.disciplines.map(d => d.meetings),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: true, drawBorder: false } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
 
-// --- Infrastructure Component (Kept from previous version for completeness) ---
-function TaskItem({ task, onToggle, readOnly = false }) {
-  return (
-    <div 
-      onClick={() => !readOnly && onToggle(task.id)}
-      className={`flex items-center gap-4 p-4 rounded-xl border ${task.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'} ${!readOnly ? 'cursor-pointer' : ''}`}
-    >
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${task.completed ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-300 border'}`}>
-        {task.completed ? <Check size={14} /> : <Circle size={14} />}
-      </div>
-      <span className={task.completed ? 'text-emerald-900 font-medium' : 'text-slate-700'}>{task.task}</span>
-    </div>
-  );
-}
+        // 2. LEARNING (WHOLE CHILD + PROGRESS) RENDERER
+        function renderLearning(container) {
+            // Part 1: Whole Child Gauges
+            const wholeChildHTML = `
+                <div class="mb-8 text-center">
+                    <h2 class="text-2xl font-bold text-slate-900">תפיסת הלמידה - הילד השלם</h2>
+                    <p class="text-slate-500">לחץ על המדדים לצפייה בנתוני עומק</p>
+                </div>
 
-function InfrastructureView({ kahalTasks, toggleKahalTask, hqTasks, isKahalCompleted, onContinue }) {
-  return (
-    <div className="space-y-6 animate-in fade-in">
-       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex justify-between items-center">
-         <div>
-            <h2 className="text-2xl font-bold text-slate-900">צ'ק ליסט: מוכנות לשנה</h2>
-            <p className="text-slate-600">השלם את המשימות כדי לפתוח את הדאשבורד</p>
-         </div>
-         {isKahalCompleted && (
-           <button onClick={onContinue} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center gap-2">
-             עבור לדאשבורד <ArrowLeft size={20}/>
-           </button>
-         )}
-       </div>
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <h3 className="font-bold text-indigo-900">משימות קח"ל</h3>
-            {kahalTasks.map(t => <TaskItem key={t.id} task={t} onToggle={toggleKahalTask} />)}
-          </div>
-          <div className="space-y-4 opacity-75">
-            <h3 className="font-bold text-slate-700">משימות מטה</h3>
-            {hqTasks.map(t => <TaskItem key={t.id} task={t} readOnly />)}
-          </div>
-       </div>
-    </div>
-  );
-}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    ${createGaugeCard('loves', 'אוהב ללמוד', DATA.learning.loves.score, DATA.learning.loves.color, 'heart')}
+                    ${createGaugeCard('wants', 'רוצה ללמוד', DATA.learning.wants.score, DATA.learning.wants.color, 'star')}
+                    ${createGaugeCard('knows', 'יודע ללמוד', DATA.learning.knows.score, DATA.learning.knows.color, 'graduation-cap')}
+                </div>
+                
+                <div class="border-t border-slate-200 my-8"></div>
+            `;
+
+            // Part 2: Pedagogy & Progress Controls
+            const pedagogyControlsHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">למידה ופדגוגיה</h2>
+                        <p class="text-slate-500">התקדמות וציונים שוטפים</p>
+                    </div>
+                    <div class="bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex">
+                        <button onclick="togglePedagogyView('grades')" class="${pedagogyViewMode === 'grades' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'} px-4 py-2 text-sm font-medium rounded-lg transition-all">
+                            לפי שכבות
+                        </button>
+                        <button onclick="togglePedagogyView('subjects')" class="${pedagogyViewMode === 'subjects' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'} px-4 py-2 text-sm font-medium rounded-lg transition-all">
+                            לפי מקצועות
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Part 3: Pedagogy Grid
+            const activeData = pedagogyViewMode === 'grades' ? DATA.pedagogy.grades : DATA.pedagogy.subjects;
+            const gridHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${activeData.map(item => createMetricCard(item)).join('')}
+                </div>
+            `;
+
+            container.innerHTML = wholeChildHTML + pedagogyControlsHTML + gridHTML;
+
+            // Initialize Gauges
+            initGauge('gauge-loves', DATA.learning.loves.score, DATA.learning.loves.color);
+            initGauge('gauge-wants', DATA.learning.wants.score, DATA.learning.wants.color);
+            initGauge('gauge-knows', DATA.learning.knows.score, DATA.learning.knows.color);
+        }
+
+        // Toggle function for Learning tab
+        function togglePedagogyView(mode) {
+            pedagogyViewMode = mode;
+            // Re-render the tab
+            const contentArea = document.getElementById('content-area');
+            // We don't want the fade-in animation again for sub-tab switch usually, but for simplicity here we re-render
+            renderLearning(contentArea);
+            lucide.createIcons();
+        }
+
+        function createGaugeCard(id, title, score, color, icon) {
+            return `
+                <div onclick="openLearningModal('${id}')" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 rounded-xl bg-slate-50 text-[${color}] group-hover:bg-[${color}] group-hover:text-white transition-colors" style="color: ${color}">
+                            <i data-lucide="${icon}" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">${title}</h3>
+                    </div>
+                    
+                    <div class="gauge-container mb-4">
+                        <canvas id="gauge-${id}"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pt-8">
+                            <span class="text-4xl font-extrabold text-slate-800">${score}</span>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">ציון משוקלל</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button class="text-sm font-bold px-4 py-2 rounded-lg bg-slate-50 text-slate-600 group-hover:bg-slate-100 transition-colors">
+                            לחץ לפירוט מדדים
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createMetricCard(item) {
+            // Helper to generate the metric card HTML
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all hover:shadow-lg hover:-translate-y-1 group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">${item.name}</h3>
+                        </div>
+                        <div class="flex flex-col gap-1 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">
+                            <div class="flex items-center gap-1.5"><i data-lucide="users" class="w-3 h-3 text-indigo-400"></i> ${item.students}</div>
+                            <div class="flex items-center gap-1.5"><i data-lucide="user-check" class="w-3 h-3 text-emerald-400"></i> ${item.teachers}</div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-6 py-2">
+                        <div class="text-4xl font-extrabold text-slate-800 group-hover:text-indigo-600 transition-colors">${item.started}</div>
+                        <div class="text-xs font-medium text-slate-400 uppercase tracking-wide mt-1">תלמידים פעילים (${item.startedPct}%)</div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="text-slate-500">התקדמות</span>
+                                <span class="font-bold text-slate-700">${item.progress}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div class="bg-gradient-to-r from-rose-400 to-rose-500 h-2 rounded-full" style="width: ${item.progress}%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="text-slate-500">ציון ממוצע</span>
+                                <span class="font-bold text-slate-700">${item.avgGrade > 10 ? item.avgGrade/10 : item.avgGrade}</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-2 rounded-full" style="width: ${item.avgGrade > 10 ? item.avgGrade : item.avgGrade * 10}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initGauge(canvasId, score, color) {
+            new Chart(document.getElementById(canvasId), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Score', 'Remaining'],
+                    datasets: [{
+                        data: [score, 100 - score],
+                        backgroundColor: [color, '#f1f5f9'],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270,
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '80%',
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+        }
+
+        // 3. TZAAM RENDERER (Restored)
+        function renderTzaam(container) {
+            const data = DATA.tzaam;
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">תמונת מצב תצא"מ</h2>
+                            <p class="text-slate-500">דיווח מנטורים ומענה שאלונים חברתיים-רגשיים</p>
+                        </div>
+                        <button class="text-indigo-600 text-sm font-bold hover:underline">ייצא דוח מפורט</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Questionnaires Status -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <i data-lucide="activity" class="text-emerald-500 w-5 h-5"></i>
+                                סטטוס מענה שאלונים
+                            </h3>
+                            <div class="space-y-6">
+                                ${data.questionnaires.map(q => `
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="font-medium text-slate-700">${q.name}</span>
+                                            <span class="font-bold text-indigo-600">${q.completed}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                            <div class="h-3 rounded-full ${q.completed > 70 ? 'bg-emerald-500' : q.completed > 40 ? 'bg-amber-400' : 'bg-rose-400'}" style="width: ${q.completed}%"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Mentoring Status -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <i data-lucide="message-circle" class="text-indigo-500 w-5 h-5"></i>
+                                מפגשי מנטור
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-indigo-50/50 rounded-2xl p-6 text-center border border-indigo-100">
+                                    <div class="text-sm text-indigo-700 mb-2 font-bold uppercase tracking-wider">מפגשים אישיים</div>
+                                    <div class="text-4xl font-extrabold text-indigo-900">${data.mentoring.personal.executed}</div>
+                                    <div class="text-xs text-indigo-400 mt-1">מתוך ${data.mentoring.personal.planned} מתוכננים</div>
+                                    <div class="mt-4 w-full bg-white h-2 rounded-full overflow-hidden">
+                                        <div class="bg-indigo-500 h-full" style="width: ${(data.mentoring.personal.executed/data.mentoring.personal.planned)*100}%"></div>
+                                    </div>
+                                </div>
+                                <div class="bg-emerald-50/50 rounded-2xl p-6 text-center border border-emerald-100">
+                                    <div class="text-sm text-emerald-700 mb-2 font-bold uppercase tracking-wider">מפגשים קבוצתיים</div>
+                                    <div class="text-4xl font-extrabold text-emerald-900">${data.mentoring.group.executed}</div>
+                                    <div class="text-xs text-emerald-400 mt-1">מתוך ${data.mentoring.group.planned} מתוכננים</div>
+                                    <div class="mt-4 w-full bg-white h-2 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full" style="width: ${(data.mentoring.group.executed/data.mentoring.group.planned)*100}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // 4. SKILLS RENDERER
+        function renderSkills(container) {
+            container.innerHTML = `
+                <div class="space-y-8">
+                    <!-- Integrated Skills Section -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="bg-amber-100 p-2 rounded-lg text-amber-700"><i data-lucide="layers" class="w-5 h-5"></i></div>
+                            <h2 class="text-xl font-bold text-slate-800">מיומנויות משולבות בלמידה</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${DATA.skills.embedded.map(item => `
+                                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-32">
+                                    <div>
+                                        <div class="flex justify-between">
+                                            <span class="font-bold text-slate-800">${item.skill}</span>
+                                            <span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">${item.grade}</span>
+                                        </div>
+                                        <div class="text-sm text-slate-500 mt-1">מקצוע: ${item.subject}</div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span>הישג נדרש</span>
+                                            <span class="font-bold text-amber-600">${item.status}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-1.5">
+                                            <div class="bg-amber-500 h-1.5 rounded-full" style="width: ${item.status}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-200 my-6"></div>
+
+                    <!-- Skills Courses Section -->
+                    <div>
+                         <div class="flex items-center gap-3 mb-4">
+                            <div class="bg-indigo-100 p-2 rounded-lg text-indigo-700"><i data-lucide="book" class="w-5 h-5"></i></div>
+                            <h2 class="text-xl font-bold text-slate-800">קורסים ייעודיים (SEL)</h2>
+                        </div>
+                        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                            <table class="w-full text-right">
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">שם הקורס</th>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">מס' תלמידים</th>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">ממוצע ציונים</th>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">סטטוס</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${DATA.skills.courses.map(course => `
+                                        <tr class="hover:bg-slate-50/50">
+                                            <td class="px-6 py-4 font-medium text-slate-800">${course.name}</td>
+                                            <td class="px-6 py-4 text-slate-500">${course.students}</td>
+                                            <td class="px-6 py-4 font-bold text-indigo-600">${course.avg}</td>
+                                            <td class="px-6 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">פעיל</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- MODAL LOGIC ---
+
+        function openModal(contentHTML) {
+            const modal = document.getElementById('modal-container');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = contentHTML;
+            modal.classList.remove('hidden');
+            
+            // Animation
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal-container');
+            const content = document.getElementById('modal-content');
+            
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // Specific Modals
+        function openChromebookModal() {
+            const html = `
+                <div class="p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">פילוח שימוש בכרומבוקים לפי שכבות</h2>
+                        <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="chart-chromebook-breakdown"></canvas>
+                    </div>
+                </div>
+            `;
+            openModal(html);
+
+            // Render Chart
+            setTimeout(() => {
+                new Chart(document.getElementById('chart-chromebook-breakdown'), {
+                    type: 'bar',
+                    data: {
+                        labels: DATA.chromebooks.breakdown.map(b => b.label),
+                        datasets: [{
+                            label: '% שימוש',
+                            data: DATA.chromebooks.breakdown.map(b => b.value),
+                            backgroundColor: '#06b6d4',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, max: 100 } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }, 50);
+        }
+
+        function openLearningModal(type) {
+            const data = DATA.learning[type];
+            const titleMap = { loves: 'אוהב ללמוד', wants: 'רוצה ללמוד', knows: 'יודע ללמוד' };
+            
+            const html = `
+                <div class="p-8">
+                    <!-- Header with Title & Close -->
+                    <div class="flex justify-between items-start mb-6 pb-6 border-b border-slate-100">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <h2 class="text-2xl font-bold text-slate-800" style="color: ${data.color}">${titleMap[type]}</h2>
+                                <span class="bg-slate-100 px-3 py-1 rounded-full text-sm font-bold text-slate-600">ציון: ${data.score}</span>
+                            </div>
+                            <p class="text-slate-500">פירוט מדדים ונתונים</p>
+                        </div>
+                        <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="bg-slate-50 p-4 rounded-xl flex flex-wrap gap-4 mb-8 border border-slate-200">
+                        <div class="flex-1 min-w-[150px]">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">סינון לפי שכבה</label>
+                            <select class="w-full border-slate-300 rounded-lg text-sm p-2 focus:ring-indigo-500 border">
+                                <option>כל השכבות</option>
+                                <option>שכבה ז'</option>
+                                <option>שכבה ח'</option>
+                                <option>שכבה ט'</option>
+                            </select>
+                        </div>
+                        <div class="flex-1 min-w-[150px]">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">סינון לפי קבוצה</label>
+                            <select class="w-full border-slate-300 rounded-lg text-sm p-2 focus:ring-indigo-500 border">
+                                <option>כל הקבוצות</option>
+                                <option>מצוינות</option>
+                                <option>חממ"ה</option>
+                                <option>חינוך מיוחד</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors w-full">החל סינון</button>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white border border-slate-100 rounded-xl p-4 shadow-sm h-80">
+                            <h4 class="font-bold text-slate-700 mb-4">השוואת מדדים</h4>
+                            <div class="h-64">
+                                <canvas id="chart-learning-drilldown"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-slate-700">פירוט מדדים</h4>
+                            ${data.metrics.map(m => `
+                                <div class="bg-white p-3 rounded-lg border border-slate-100 flex flex-col gap-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium text-slate-600">${m.name}</span>
+                                        <span class="font-bold text-slate-800">${m.score}%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full" style="width: ${m.score}%; background-color: ${data.color}"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            openModal(html);
+
+            // Render Specific Breakdown Chart
+            setTimeout(() => {
+                new Chart(document.getElementById('chart-learning-drilldown'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.metrics.map(m => m.name),
+                        datasets: [{
+                            label: 'ציון',
+                            data: data.metrics.map(m => m.score),
+                            backgroundColor: data.color,
+                            borderRadius: 6,
+                            barPercentage: 0.5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, max: 100 } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }, 50);
+        }
+
+    </script>
+</body>
+</html>
