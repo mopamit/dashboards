@@ -67,7 +67,7 @@
             overflow: hidden;
         }
         .accordion-content.open {
-            max-height: 500px; /* Arbitrary large height */
+            max-height: 800px; /* Increased for deeper nesting */
             opacity: 1;
         }
     </style>
@@ -211,54 +211,31 @@
         Chart.register(gaugeNeedle);
 
         // --- GLOBAL STATE ---
-        let currentRole = 'manager'; // 'manager', 'grade_coord', 'subject_coord'
+        let currentRole = 'manager'; 
         let currentTab = 'infrastructure';
         let pedagogyViewMode = 'grades'; 
+        let disciplinaryTab = 'english'; 
         
-        // --- ROLE MANAGEMENT ---
-        function toggleRoleMenu() {
-            const menu = document.getElementById('role-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        // Close menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('role-menu');
-            const button = document.querySelector('button[onclick="toggleRoleMenu()"]');
-            if (!menu.classList.contains('hidden') && !menu.contains(event.target) && !button.contains(event.target)) {
-                menu.classList.add('hidden');
-            }
-        });
-
-        function setRole(role) {
-            currentRole = role;
-            
-            // Update Label
-            const labels = {
-                'manager': 'תצוגת מנהל',
-                'grade_coord': 'רכז שכבה ח\'',
-                'subject_coord': 'רכז מתמטיקה'
-            };
-            
-            const titles = {
-                'manager': 'מחובר: מנהל פדגוגי',
-                'grade_coord': 'מחובר: רכז שכבה',
-                'subject_coord': 'מחובר: רכז מקצוע'
-            };
-
-            document.getElementById('role-btn-text').innerText = labels[role];
-            document.getElementById('header-role-text').innerText = titles[role];
-            
-            // Hide Menu
-            document.getElementById('role-menu').classList.add('hidden');
-
-            // Re-render current tab
-            switchTab(currentTab);
-        }
-
-
         // --- DATA STORE ---
         const DATA = {
+            insights: {
+                infrastructure: {
+                    main: "זוהתה ירידה בשימוש בכרומבוקים בשכבה ח' בשעות הצהריים - מומלץ לבדוק תקינות רשת.",
+                    focus: ["כיתה ח'3 - דיווחים על תקלות חיבור", "מעבדת מחשבים 2 - עומס רשת"]
+                },
+                learning: {
+                    main: "שיפור ניכר בציוני מדעים בשכבה ט', אך נדרשת התערבות בהיסטוריה.",
+                    focus: ["קבוצת תגבור - מתמטיקה ז'", "תלמידים בסיכון לנשירה - כיתה י'1"]
+                },
+                tzaam: {
+                    main: "מדדי תחושת שייכות במגמת עלייה, אך מסוגלות עצמית דורשת חיזוק.",
+                    focus: ["תלמידים חדשים בשכבה ז'", "קבוצות מנהיגות צעירה"]
+                },
+                skills: {
+                    main: "שליטה גבוהה באוריינות דיגיטלית, יש לחזק מיומנויות טיעון וחשיבה ביקורתית.",
+                    focus: ["קורס דיבייט - הרחבת פעילות", "שילוב מיומנויות טיעון בשיעורי שפה"]
+                }
+            },
             chromebooks: {
                 total: 850,
                 active: 722,
@@ -311,30 +288,32 @@
                     score: 84,
                     color: '#f43f5e',
                     metrics: [
-                        { name: "תחושת שייכות", score: 88 },
-                        { name: "ביטחון ומוגנות", score: 92 },
-                        { name: "עניין וסקרנות", score: 75 },
-                        { name: "קשר עם מורים", score: 82 }
+                        { name: "רגש", score: 88 },
+                        { name: "עניין בלמידה", score: 82 },
+                        { name: "הנאה מלמידה", score: 75 }
                     ]
                 },
                 wants: {
                     score: 76,
                     color: '#f59e0b',
                     metrics: [
-                        { name: "מסוגלות עצמית", score: 80 },
-                        { name: "הצבת יעדים", score: 65 },
-                        { name: "התמדה ומאמץ", score: 85 },
-                        { name: "Growth Mindset", score: 72 }
+                        { name: "התמדה", score: 85 },
+                        { name: "מעורבות", score: 80 },
+                        { name: "איתגור עצמי", score: 65 },
+                        { name: "מוטיבציה", score: 78 },
+                        { name: "תפיסת מאמץ", score: 72 }
                     ]
                 },
                 knows: {
                     score: 68,
                     color: '#6366f1',
                     metrics: [
-                        { name: "ממוצע ציונים", score: 72 },
-                        { name: "הערכה חלופית", score: 65 },
-                        { name: "שליטה במיומנויות", score: 68 },
-                        { name: "הבנה עמוקה", score: 60 }
+                        { name: "למידה מעמיקה", score: 60 },
+                        { name: "ניהול זמן", score: 65 },
+                        { name: "היעזרות", score: 72 },
+                        { name: "שימוש באסטרטגיות", score: 68 },
+                        { name: "מטא-קוגניציה", score: 64 },
+                        { name: "מודעות לידע", score: 70 }
                     ]
                 }
             },
@@ -359,25 +338,53 @@
                     { name: "שאלון 3: מוטיבציה", completed: 40, target: 100 },
                 ],
                 mentoring: {
-                    personal: { planned: 450, executed: 320, details: [] }, // Shortened for brevity
-                    group: { planned: 40, executed: 38, sessions: [] } // Shortened for brevity
+                    personal: { planned: 450, executed: 320, details: [] }, 
+                    group: { planned: 40, executed: 38, sessions: [] } 
                 }
             },
             skills: {
-                embedded: [
-                    { skill: "אוריינות מידע", subject: "היסטוריה", grade: "ח'", status: 85 },
-                    { skill: "חשיבה ביקורתית", subject: "מדעים", grade: "ט'", status: 72 },
-                    { skill: "עבודת צוות", subject: "אנגלית", grade: "ז'", status: 90 },
-                ],
-                courses: [
-                    { name: "קורס ניהול זמן", students: 120, avg: 88 },
-                    { name: "קורס מייקרים", students: 45, avg: 95 },
-                    { name: "קורס דיבייט", students: 60, avg: 82 },
-                ]
+                literacy: {
+                    categories: [
+                        { name: "אוריינות לשונית", score: 85, skills: [{name: "איתור מידע", val: 88}, {name: "פרשנות והיסק ממקורות", val: 82}, {name: "הבעה בכתב", val: 85}] },
+                        { name: "חשיבה ביקורתית", score: 72, skills: [{name: "הערכת מידע ומקורות מידע", val: 70}, {name: "טיעון", val: 74}] },
+                        { name: "חשיבה יצירתית", score: 90, skills: [{name: "סקרנות ומקוריות", val: 92}, {name: "גמישות מחשבתית", val: 88}, {name: "יצירת הקשרים חדשים", val: 90}] },
+                        { name: "אוריינות דיגיטלית", score: 78, skills: [{name: "צריכה ויצירה של תוכן דיגיטלי", val: 78}] },
+                        { name: "אוריינות מידע", score: 82, skills: [{name: "איתור מידע", val: 85}, {name: "ארגון וניהול מידע", val: 80}, {name: "הצגת מידע", val: 81}] }
+                    ]
+                },
+                disciplinary: {
+                    english: [
+                        { name: "Communicative Language Activities", score: 80, skills: ["Reception – Spoken & Written", "Production – Spoken & Written", "Mediation"] },
+                        { name: "Vocabulary", score: 75, skills: ["Self check", "Meaning", "Form", "Recall / Reproduce", "Use"] },
+                        { name: "Grammar", score: 70, skills: ["Form (Structure)", "Meaning (Semantics)", "Use (Pragmatic Appropriateness)"] },
+                        { name: "Digital Literacy", score: 88, skills: ["Digital Literacy and ICT Integration"] }
+                    ],
+                    math: [
+                        { name: "ידע", score: 85, skills: ["זכירה", "זיהוי", "חישוב", "שליפת מידע", "סידור ומיון"] },
+                        { name: "יישום", score: 78, skills: ["בחירת אסטרטגיה", "ייצוג", "מידול", "הוצאה לפועל", "פתרון בעיות שגרתיות"] },
+                        { name: "הנמקה", score: 65, skills: ["ניתוח", "הכללה", "יצירת קשרים", "הצדקה", "פתרון בעיות לא שגרתיות"] }
+                    ]
+                },
+                courses: {
+                    sel: [
+                        { name: "ניהול עצמי", students: 120, avg: 88, status: "פעיל" },
+                        { name: "עבודת צוות", students: 145, avg: 92, status: "פעיל" },
+                        { name: "תקשורת", students: 90, avg: 85, status: "פעיל" },
+                        { name: "חשיבה יצירתית", students: 110, avg: 94, status: "פעיל" }
+                    ],
+                    strategies: [
+                        { name: "ממילה למשפט", students: 60, avg: 80, status: "פעיל" },
+                        { name: "פיצוח שאלה", students: 200, avg: 75, status: "פעיל" },
+                        { name: "התמודדות עם מילים לא מוכרות", students: 85, avg: 82, status: "פעיל" },
+                        { name: "איתור ומירקור רעיון מרכזי", students: 150, avg: 88, status: "פעיל" },
+                        { name: "תהליך למידה למבחן", students: 300, avg: 90, status: "פעיל" },
+                        { name: "קורא פעיל", students: 100, avg: 85, status: "פעיל" }
+                    ]
+                }
             }
         };
 
-        // Populate DATA with details from previous versions to maintain functionality
+        // Populate DATA with details
         DATA.tzaam.mentoring.personal.details = [
             { name: "אורית שחר", students: [{ name: "דניאל כהן", count: 3 }, { name: "מיכל לוי", count: 2 }, { name: "יוסי אברהמי", count: 4 }] },
             { name: "יואב בן-נון", students: [{ name: "רונית ששון", count: 1 }, { name: "גדי איזנקוט", count: 5 }] },
@@ -422,6 +429,59 @@
             lucide.createIcons();
         }
 
+        // --- HELPER: INSIGHTS CARD ---
+        function createInsightsCard(data) {
+            if (!data) return '';
+            return `
+                <div class="bg-gradient-to-l from-indigo-50 to-white rounded-2xl p-6 shadow-sm border border-indigo-100 mb-8 mt-2 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-2 h-full bg-indigo-500"></div>
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex-1">
+                            <h3 class="flex items-center gap-2 text-lg font-bold text-indigo-800 mb-2">
+                                <i data-lucide="lightbulb" class="w-5 h-5 text-amber-500 fill-amber-500"></i>
+                                תובנות ומיקוד
+                            </h3>
+                            <p class="text-slate-700 font-medium leading-relaxed">${data.main}</p>
+                        </div>
+                        <div class="w-full md:w-1/3 bg-white/60 rounded-xl p-4 border border-indigo-50">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wide">קבוצות ותלמידים למיקוד</h4>
+                            <ul class="space-y-2">
+                                ${data.focus.map(item => `
+                                    <li class="flex items-start gap-2 text-sm text-slate-700">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 flex-shrink-0"></span>
+                                        ${item}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleRoleMenu() {
+            const menu = document.getElementById('role-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('role-menu');
+            const button = document.querySelector('button[onclick="toggleRoleMenu()"]');
+            if (!menu.classList.contains('hidden') && !menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function setRole(role) {
+            currentRole = role;
+            const labels = { 'manager': 'תצוגת מנהל', 'grade_coord': 'רכז שכבה ח\'', 'subject_coord': 'רכז מתמטיקה' };
+            const titles = { 'manager': 'מחובר: מנהל פדגוגי', 'grade_coord': 'מחובר: רכז שכבה', 'subject_coord': 'מחובר: רכז מקצוע' };
+            document.getElementById('role-btn-text').innerText = labels[role];
+            document.getElementById('header-role-text').innerText = titles[role];
+            document.getElementById('role-menu').classList.add('hidden');
+            switchTab(currentTab);
+        }
+
         // --- RENDERERS ---
 
         // 1. INFRASTRUCTURE RENDERER
@@ -429,29 +489,21 @@
             let filteredRestrictions = DATA.chromebooks.restrictions;
             let chromebookData = { ...DATA.chromebooks };
             let mentoringStaff = DATA.mentoring.staff;
-            
-            // ROLE FILTERING LOGIC
             let showChromebookCard = true;
 
             if (currentRole === 'grade_coord') {
-                // Grade Coord: Sees specific grade (Heth / ח')
                 filteredRestrictions = DATA.chromebooks.restrictions.filter(r => r.grade === "שכבה ח'");
                 const breakdownItem = DATA.chromebooks.breakdown.find(b => b.label === "שכבה ח'");
                 chromebookData.percentage = breakdownItem ? breakdownItem.value : 0;
-                chromebookData.active = Math.floor(DATA.chromebooks.total * (chromebookData.percentage / 100) / 4); // Approx active per grade
-                
-                // Mentoring: Sees general stats but focus on grade teachers (mocking filtering logic)
-                // For simplicity, grade coord sees all staff (as they manage the grade's diverse subjects)
+                chromebookData.active = Math.floor(DATA.chromebooks.total * (chromebookData.percentage / 100) / 4); 
             } else if (currentRole === 'subject_coord') {
-                // Subject Coord: Sees specific subject (Math / מתמטיקה)
-                showChromebookCard = false; // Infra usually not managed by subject coord
+                showChromebookCard = false;
                 mentoringStaff = DATA.mentoring.staff.filter(s => s.subject === "מתמטיקה");
             }
 
-            // HTML CONSTRUCTION
             let html = '<div class="space-y-8">';
             
-            // Row 1: Chromebooks
+            // Row 1: Chromebooks + Restrictions
             if (showChromebookCard) {
                 html += `
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -520,83 +572,81 @@
                     </div>`;
             }
 
-            // Row 2: Mentoring
-            html += `
-                     <div class="grid grid-cols-1 ${!showChromebookCard ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} gap-8">
-                        ${currentRole !== 'subject_coord' ? `
-                        <!-- Mentoring Chart (Shown for Manager & Grade Coord) -->
-                        <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 relative">
-                            <div class="flex justify-between items-start mb-6">
-                                <div>
-                                    <h3 class="text-xl font-bold text-slate-800">ביצוע ליווי פדגוגי</h3>
-                                    <p class="text-slate-500 text-sm">כמות מפגשים שבוצעו בפועל</p>
-                                </div>
-                                <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                                    <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
-                                </div>
+            // Row 2: Unified Mentoring Card
+            if (currentRole !== 'subject_coord') {
+                html += `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">ליווי בתחומי הדעת</h3>
+                                <p class="text-slate-500 text-sm">ביצוע הדרכות ושיבוץ מלווים</p>
                             </div>
-                            <div class="h-48 w-full">
-                                <canvas id="chart-mentoring"></canvas>
+                            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                                <i data-lucide="briefcase" class="w-6 h-6"></i>
                             </div>
-                        </div>` : ''}
-
-                        <!-- Mentors List & Schedule -->
-                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="text-xl font-bold text-slate-800">צוות מלווים ומערכת שעות</h3>
-                                    <p class="text-slate-500 text-sm">שיבוץ שבועי ומורים משוייכים</p>
-                                </div>
-                                <div class="p-3 bg-violet-50 text-violet-600 rounded-xl">
-                                    <i data-lucide="calendar" class="w-6 h-6"></i>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-right text-sm">
-                                    <thead class="text-xs text-slate-500 uppercase bg-slate-50">
-                                        <tr>
-                                            <th class="px-4 py-2 rounded-r-lg">מקצוע</th>
-                                            <th class="px-4 py-2">שם המלווה</th>
-                                            <th class="px-4 py-2">מועד הליווי</th>
-                                            <th class="px-4 py-2 rounded-l-lg w-10"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        ${mentoringStaff.map((s, index) => `
-                                            <tr class="hover:bg-slate-50/50 cursor-pointer transition-colors" onclick="toggleTeachersList(${index})">
-                                                <td class="px-4 py-3 font-medium text-slate-800">${s.subject}</td>
-                                                <td class="px-4 py-3 text-slate-600">${s.name}</td>
-                                                <td class="px-4 py-3"><span class="flex items-center gap-1.5 text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded-md text-xs"><i data-lucide="clock" class="w-3 h-3"></i> ${s.time}</span></td>
-                                                <td class="px-4 py-3 text-slate-400 text-center"><i id="icon-teacher-${index}" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i></td>
-                                            </tr>
+                        </div>
+                        <div class="flex flex-col lg:flex-row">
+                             <!-- Right Side: Accordion List -->
+                            <div class="lg:w-1/2 p-6 border-l border-slate-100 max-h-[400px] overflow-y-auto">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-right text-sm">
+                                        <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
                                             <tr>
-                                                <td colspan="4" class="p-0 border-0">
-                                                    <div id="teachers-list-${index}" class="accordion-content bg-slate-50 px-4">
-                                                        <div class="py-3 px-2">
-                                                            <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">מורים משוייכים:</p>
-                                                            <ul class="space-y-1">
-                                                                ${s.assignedTeachers.map(teacher => `
-                                                                    <li class="flex items-center gap-2 text-sm text-slate-700">
-                                                                        <span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
-                                                                        ${teacher}
-                                                                    </li>
-                                                                `).join('')}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </td>
+                                                <th class="px-4 py-2 rounded-r-lg">מקצוע</th>
+                                                <th class="px-4 py-2">שם המלווה</th>
+                                                <th class="px-4 py-2">מועד הליווי</th>
+                                                <th class="px-4 py-2 rounded-l-lg w-10"></th>
                                             </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            ${mentoringStaff.map((s, index) => `
+                                                <tr class="hover:bg-slate-50/50 cursor-pointer transition-colors" onclick="toggleTeachersList(${index})">
+                                                    <td class="px-4 py-3 font-medium text-slate-800">${s.subject}</td>
+                                                    <td class="px-4 py-3 text-slate-600">${s.name}</td>
+                                                    <td class="px-4 py-3"><span class="flex items-center gap-1.5 text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded-md text-xs"><i data-lucide="clock" class="w-3 h-3"></i> ${s.time}</span></td>
+                                                    <td class="px-4 py-3 text-slate-400 text-center"><i id="icon-teacher-${index}" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i></td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="4" class="p-0 border-0">
+                                                        <div id="teachers-list-${index}" class="accordion-content bg-slate-50 px-4">
+                                                            <div class="py-3 px-2">
+                                                                <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">מורים משוייכים:</p>
+                                                                <ul class="space-y-1">
+                                                                    ${s.assignedTeachers.map(teacher => `
+                                                                        <li class="flex items-center gap-2 text-sm text-slate-700">
+                                                                            <span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
+                                                                            ${teacher}
+                                                                        </li>
+                                                                    `).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                             <!-- Left Side: Graph -->
+                            <div class="lg:w-1/2 p-6 flex items-center justify-center bg-slate-50/50">
+                                <div class="w-full h-64">
+                                     <h4 class="text-center text-sm font-bold text-slate-500 mb-4">ביצוע מפגשים בפועל מול יעד</h4>
+                                    <canvas id="chart-mentoring"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
+
+            // Insights Card (Bottom)
+            html += createInsightsCard(DATA.insights.infrastructure);
+
+            html += '</div>';
             container.innerHTML = html;
 
-            // Initialize Charts if elements exist
             if (showChromebookCard) {
                 new Chart(document.getElementById('chart-chromebook'), {
                     type: 'doughnut',
@@ -655,36 +705,27 @@
 
         // 2. LEARNING RENDERER
         function renderLearning(container) {
-            // ROLE FILTERING
             let activeData = [];
             let displayMode = pedagogyViewMode;
 
             if (currentRole === 'grade_coord') {
-                // Grade Coord sees only Grade H
-                displayMode = 'grades'; // Force grade view but filtered
+                displayMode = 'grades';
                 activeData = DATA.pedagogy.grades.filter(g => g.id === 'h');
             } else if (currentRole === 'subject_coord') {
-                // Subject Coord sees only Math (id: 1 for simplicity I'll map Math, assuming first or mock)
-                // In data, id 1 is English, 2 History.. Let's mock Math as not in the list or assume a specific one.
-                // Let's use 'מדעים' (Sciences) as closest or create a mock.
-                // For this demo, let's filter for "מדעים" (id 3)
                 displayMode = 'subjects';
                 activeData = DATA.pedagogy.subjects.filter(s => s.name === "מדעים"); 
-                // Note: The UI says Math Coordinator, but data has Science. I'll filter Science as the active subject for demo.
             } else {
-                // Manager sees all based on view mode
                 activeData = pedagogyViewMode === 'grades' ? DATA.pedagogy.grades : DATA.pedagogy.subjects;
             }
 
-            // Part 1: Pedagogy Controls
             let pedagogyControlsHTML = '';
             
             if (currentRole === 'manager') {
                 pedagogyControlsHTML = `
                     <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900">נתוני שימוש</h2>
-                            <p class="text-slate-500">התקדמות וציונים שוטפים לפי מקצועות/שכבות</p>
+                            <h2 class="text-2xl font-bold text-slate-900">התקדמות וציונים</h2>
+                            <p class="text-slate-500">פירוט שוטף לפי מקצועות ושכבות</p>
                         </div>
                         <div class="bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex">
                             <button onclick="togglePedagogyView('grades')" class="${pedagogyViewMode === 'grades' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'} px-4 py-2 text-sm font-medium rounded-lg transition-all">
@@ -697,55 +738,52 @@
                     </div>
                 `;
             } else {
-                // For coords, simple title, no toggles
                 pedagogyControlsHTML = `
                     <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-slate-900">נתוני שימוש והתקדמות</h2>
+                        <h2 class="text-2xl font-bold text-slate-900">התקדמות וציונים</h2>
                         <p class="text-slate-500">${currentRole === 'grade_coord' ? "נתוני שכבה ח'" : "נתוני מקצוע מדעים"}</p>
                     </div>
                 `;
             }
 
-            // Part 2: Pedagogy Grid
             const gridHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     ${activeData.map(item => createMetricCard(item)).join('')}
                 </div>
-                
-                <div class="border-t border-slate-200 my-8"></div>
             `;
 
-            // Part 3: Whole Child Gauges
-            // Mocking data variation for roles
-            let learningData = JSON.parse(JSON.stringify(DATA.learning)); // Deep copy
+            let learningData = JSON.parse(JSON.stringify(DATA.learning)); 
             if (currentRole === 'grade_coord') {
-                learningData.loves.score = 78; // Different score for grade 8
+                learningData.loves.score = 78;
             } else if (currentRole === 'subject_coord') {
-                learningData.loves.score = 88; // Different score for subject
+                learningData.loves.score = 88;
             }
 
             const wholeChildHTML = `
-                <div class="mb-8 text-center">
-                    <h2 class="text-2xl font-bold text-slate-900">תפיסת הלמידה - הילד השלם</h2>
-                    <p class="text-slate-500">לחץ על המדדים לצפייה בנתוני עומק</p>
-                </div>
+                <div class="border-t border-slate-200 my-8 pt-8">
+                    <div class="mb-8 text-center">
+                        <h2 class="text-2xl font-bold text-slate-900">תפיסת הלמידה</h2>
+                        <p class="text-slate-500">לחץ על המדדים לצפייה בנתוני עומק</p>
+                    </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    ${createGaugeCard('loves', 'אוהב ללמוד', learningData.loves.score, learningData.loves.color, 'heart')}
-                    ${createGaugeCard('wants', 'רוצה ללמוד', learningData.wants.score, learningData.wants.color, 'star')}
-                    ${createGaugeCard('knows', 'יודע ללמוד', learningData.knows.score, learningData.knows.color, 'graduation-cap')}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                        ${createGaugeCard('loves', 'אוהב ללמוד', learningData.loves.score, learningData.loves.color, 'heart')}
+                        ${createGaugeCard('wants', 'רוצה ללמוד', learningData.wants.score, learningData.wants.color, 'star')}
+                        ${createGaugeCard('knows', 'יודע ללמוד', learningData.knows.score, learningData.knows.color, 'graduation-cap')}
+                    </div>
                 </div>
             `;
+            
+            // Insights Card
+            const insightsHTML = createInsightsCard(DATA.insights.learning);
 
-            container.innerHTML = pedagogyControlsHTML + gridHTML + wholeChildHTML;
+            container.innerHTML = pedagogyControlsHTML + gridHTML + wholeChildHTML + insightsHTML;
 
-            // Initialize Gauges
             initGauge('gauge-loves', learningData.loves.score, learningData.loves.color);
             initGauge('gauge-wants', learningData.wants.score, learningData.wants.color);
             initGauge('gauge-knows', learningData.knows.score, learningData.knows.color);
         }
 
-        // Toggle function for Learning tab
         function togglePedagogyView(mode) {
             pedagogyViewMode = mode;
             const contentArea = document.getElementById('content-area');
@@ -782,39 +820,38 @@
         function createMetricCard(item) {
              return `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all hover:shadow-lg hover:-translate-y-1 group">
-                    <div class="flex justify-between items-start mb-4">
+                    <div class="flex justify-between items-start mb-6">
                         <div>
-                            <h3 class="text-lg font-bold text-slate-800">${item.name}</h3>
+                            <h3 class="text-xl font-bold text-slate-800">${item.name}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">${item.started} פעילים</span>
+                            </div>
                         </div>
-                        <div class="flex flex-col gap-1 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">
-                            <div class="flex items-center gap-1.5"><i data-lucide="users" class="w-3 h-3 text-indigo-400"></i> ${item.students}</div>
-                            <div class="flex items-center gap-1.5"><i data-lucide="user-check" class="w-3 h-3 text-emerald-400"></i> ${item.teachers}</div>
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                             <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
                         </div>
                     </div>
 
-                    <div class="text-center mb-6 py-2">
-                        <div class="text-4xl font-extrabold text-slate-800 group-hover:text-indigo-600 transition-colors">${item.started}</div>
-                        <div class="text-xs font-medium text-slate-400 uppercase tracking-wide mt-1">תלמידים פעילים (${item.startedPct}%)</div>
-                    </div>
-
-                    <div class="space-y-4">
+                    <div class="space-y-6">
+                        <!-- Progress Hero -->
                         <div>
-                            <div class="flex justify-between text-xs mb-1.5">
-                                <span class="text-slate-500">התקדמות</span>
-                                <span class="font-bold text-slate-700">${item.progress}%</span>
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-sm font-medium text-slate-500">התקדמות שנתית</span>
+                                <span class="text-2xl font-extrabold text-indigo-600">${item.progress}%</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                <div class="bg-gradient-to-r from-rose-400 to-rose-500 h-2 rounded-full" style="width: ${item.progress}%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full shadow-sm" style="width: ${item.progress}%"></div>
                             </div>
                         </div>
 
+                        <!-- Grades Hero -->
                         <div>
-                            <div class="flex justify-between text-xs mb-1.5">
-                                <span class="text-slate-500">ציון ממוצע</span>
-                                <span class="font-bold text-slate-700">${item.avgGrade > 10 ? item.avgGrade/10 : item.avgGrade}</span>
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-sm font-medium text-slate-500">ציון ממוצע</span>
+                                <span class="text-2xl font-extrabold text-emerald-600">${Math.round(item.avgGrade)}</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-2 rounded-full" style="width: ${item.avgGrade > 10 ? item.avgGrade : item.avgGrade * 10}%"></div>
+                            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-3 rounded-full shadow-sm" style="width: ${item.avgGrade > 10 ? item.avgGrade : item.avgGrade * 10}%"></div>
                             </div>
                         </div>
                     </div>
@@ -831,9 +868,9 @@
                         data: [score, 100 - score],
                         backgroundColor: [color, '#e2e8f0'],
                         borderWidth: 0,
-                        circumference: 180, // Half circle
-                        rotation: 270, // Start from left (Chart.js rotation)
-                        needleValue: score // Custom property for the plugin
+                        circumference: 180, 
+                        rotation: 270, 
+                        needleValue: score 
                     }]
                 },
                 options: {
@@ -843,14 +880,14 @@
                     plugins: { 
                         legend: { display: false }, 
                         tooltip: { enabled: false },
-                        gaugeNeedle: true // Enable custom plugin
+                        gaugeNeedle: true 
                     },
                     layout: { padding: { bottom: 0 } }
                 }
             });
         }
 
-        // 3. TZAAM RENDERER (Unchanged but respects tab switch)
+        // 3. TZAAM RENDERER
         function renderTzaam(container) {
             const data = DATA.tzaam;
             container.innerHTML = `
@@ -918,41 +955,131 @@
                             </div>
                         </div>
                     </div>
+                     ${createInsightsCard(DATA.insights.tzaam)}
                 </div>
             `;
         }
 
-        // 4. SKILLS RENDERER
+        // 4. SKILLS RENDERER (Updated)
         function renderSkills(container) {
             container.innerHTML = `
                 <div class="space-y-8">
-                    <!-- Integrated Skills Section -->
-                    <div>
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="bg-amber-100 p-2 rounded-lg text-amber-700"><i data-lucide="layers" class="w-5 h-5"></i></div>
-                            <h2 class="text-xl font-bold text-slate-800">מיומנויות משולבות בלמידה</h2>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            ${DATA.skills.embedded.map(item => `
-                                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-32">
-                                    <div>
-                                        <div class="flex justify-between">
-                                            <span class="font-bold text-slate-800">${item.skill}</span>
-                                            <span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">${item.grade}</span>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Left: Literacy Skills (Revi Melal) -->
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-amber-100 p-2 rounded-lg text-amber-700"><i data-lucide="book-open-check" class="w-5 h-5"></i></div>
+                                <h2 class="text-xl font-bold text-slate-800">מיומנויות אורייניות (רבי מלל)</h2>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4">
+                                ${DATA.skills.literacy.categories.map((cat, idx) => `
+                                    <div class="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-all cursor-pointer group" onclick="toggleSkillCategory(${idx})">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <i id="icon-skill-${idx}" data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300"></i>
+                                                <h3 class="font-bold text-slate-800 text-lg">${cat.name}</h3>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-24 bg-slate-100 rounded-full h-2 hidden sm:block">
+                                                    <div class="bg-amber-500 h-2 rounded-full" style="width: ${cat.score}%"></div>
+                                                </div>
+                                                <span class="text-lg font-bold text-amber-600">${cat.score}% <span class="text-xs text-slate-400 font-normal mr-1">רמת שליטה</span></span>
+                                            </div>
                                         </div>
-                                        <div class="text-sm text-slate-500 mt-1">מקצוע: ${item.subject}</div>
+                                        
+                                        <!-- Accordion Content -->
+                                        <div id="skill-content-${idx}" class="accordion-content">
+                                            <div class="pt-4 mt-4 border-t border-slate-100 space-y-4">
+                                                ${cat.skills.map(skill => `
+                                                    <div>
+                                                        <div class="flex justify-between mb-1.5">
+                                                            <span class="text-sm font-medium text-slate-600">${skill.name}</span>
+                                                            <span class="text-xs font-bold text-slate-800">${skill.val}%</span>
+                                                        </div>
+                                                        <div class="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
+                                                            <div class="bg-amber-400 h-2 rounded-full" style="width: ${skill.val}%"></div>
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="flex justify-between text-xs mb-1">
-                                            <span>הישג נדרש</span>
-                                            <span class="font-bold text-amber-600">${item.status}%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-100 rounded-full h-1.5">
-                                            <div class="bg-amber-500 h-1.5 rounded-full" style="width: ${item.status}%"></div>
-                                        </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Right: Disciplinary Skills -->
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-indigo-100 p-2 rounded-lg text-indigo-700"><i data-lucide="calculator" class="w-5 h-5"></i></div>
+                                    <h2 class="text-xl font-bold text-slate-800">מיומנויות דיסציפלינריות</h2>
+                                </div>
+                                
+                                <div class="bg-slate-100 p-1 rounded-lg inline-flex">
+                                    <button onclick="switchDisciplinaryTab('english')" id="tab-disc-english" class="${disciplinaryTab === 'english' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} px-3 py-1.5 text-xs font-bold rounded-md transition-all">אנגלית</button>
+                                    <button onclick="switchDisciplinaryTab('math')" id="tab-disc-math" class="${disciplinaryTab === 'math' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} px-3 py-1.5 text-xs font-bold rounded-md transition-all">מתמטיקה</button>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
+                                <!-- English Content -->
+                                <div id="content-disc-english" class="${disciplinaryTab === 'english' ? 'block' : 'hidden'} p-6 space-y-6">
+                                    <div class="flex items-center gap-2 mb-4 text-indigo-600">
+                                        <i data-lucide="languages" class="w-5 h-5"></i>
+                                        <span class="font-bold text-lg">English Skills</span>
+                                    </div>
+                                    <div class="grid gap-4">
+                                        ${DATA.skills.disciplinary.english.map((item, idx) => `
+                                            <div class="border border-slate-100 rounded-xl p-4 bg-slate-50/50">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <div class="flex items-center gap-3">
+                                                        <span class="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">${idx + 1}</span>
+                                                        <h4 class="font-bold text-slate-800">${item.name}</h4>
+                                                    </div>
+                                                    <span class="text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded text-indigo-600">${item.score}% שליטה</span>
+                                                </div>
+                                                <div class="w-full bg-white h-1.5 rounded-full mb-3 overflow-hidden">
+                                                    <div class="bg-indigo-500 h-full" style="width: ${item.score}%"></div>
+                                                </div>
+                                                <div class="flex flex-wrap gap-2 pr-9">
+                                                    ${item.skills.map(s => `<span class="bg-white border border-slate-200 px-2 py-1 rounded text-xs text-slate-600">${s}</span>`).join('')}
+                                                </div>
+                                            </div>
+                                        `).join('')}
                                     </div>
                                 </div>
-                            `).join('')}
+
+                                <!-- Math Content -->
+                                <div id="content-disc-math" class="${disciplinaryTab === 'math' ? 'block' : 'hidden'} p-6 space-y-6">
+                                    <div class="flex items-center gap-2 mb-4 text-indigo-600">
+                                        <i data-lucide="sigma" class="w-5 h-5"></i>
+                                        <span class="font-bold text-lg">מיומנויות מתמטיקה</span>
+                                    </div>
+                                    <div class="space-y-6">
+                                        ${DATA.skills.disciplinary.math.map((item, idx) => `
+                                            <div>
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <h4 class="font-bold text-slate-800">${item.name}</h4>
+                                                    <span class="text-xs font-bold text-indigo-600">${item.score}%</span>
+                                                </div>
+                                                <div class="w-full bg-slate-100 h-2 rounded-full mb-4 overflow-hidden">
+                                                    <div class="bg-indigo-500 h-full" style="width: ${item.score}%"></div>
+                                                </div>
+                                                <ul class="grid grid-cols-2 gap-3">
+                                                    ${item.skills.map(s => `
+                                                        <li class="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-2 rounded-lg">
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                                                            ${s}
+                                                        </li>
+                                                    `).join('')}
+                                                </ul>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -961,7 +1088,7 @@
                     <!-- Skills Courses Section -->
                     <div>
                          <div class="flex items-center gap-3 mb-4">
-                            <div class="bg-indigo-100 p-2 rounded-lg text-indigo-700"><i data-lucide="book" class="w-5 h-5"></i></div>
+                            <div class="bg-indigo-100 p-2 rounded-lg text-indigo-700"><i data-lucide="heart-handshake" class="w-5 h-5"></i></div>
                             <h2 class="text-xl font-bold text-slate-800">קורסים ייעודיים (SEL)</h2>
                         </div>
                         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -975,20 +1102,81 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
-                                    ${DATA.skills.courses.map(course => `
+                                    ${DATA.skills.courses.sel.map(course => `
                                         <tr class="hover:bg-slate-50/50">
-                                            <td class="px-6 py-4 font-medium text-slate-800">${course.name}</td>
+                                            <td class="px-6 py-4 font-medium text-slate-800 flex items-center gap-2">
+                                                <span class="bg-indigo-50 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded border border-indigo-100">קורס</span>
+                                                ${course.name}
+                                            </td>
                                             <td class="px-6 py-4 text-slate-500">${course.students}</td>
-                                            <td class="px-6 py-4 font-bold text-indigo-600">${course.avg}</td>
-                                            <td class="px-6 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">פעיל</span></td>
+                                            <td class="px-6 py-4 font-bold text-indigo-600">${Math.round(course.avg)}</td>
+                                            <td class="px-6 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">${course.status}</span></td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
                             </table>
                         </div>
                     </div>
+
+                    <!-- Learning Strategies Courses Section -->
+                    <div class="mt-8">
+                         <div class="flex items-center gap-3 mb-4">
+                            <div class="bg-emerald-100 p-2 rounded-lg text-emerald-700"><i data-lucide="brain-circuit" class="w-5 h-5"></i></div>
+                            <h2 class="text-xl font-bold text-slate-800">קורסים ייעודיים - אסטרטגיות למידה</h2>
+                        </div>
+                        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                            <table class="w-full text-right">
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">שם הקורס</th>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">מס' תלמידים</th>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">ממוצע ציונים</th>
+                                        <th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase">סטטוס</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${DATA.skills.courses.strategies.map(course => `
+                                        <tr class="hover:bg-slate-50/50">
+                                            <td class="px-6 py-4 font-medium text-slate-800 flex items-center gap-2">
+                                                <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded border border-emerald-100">קורס</span>
+                                                ${course.name}
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500">${course.students}</td>
+                                            <td class="px-6 py-4 font-bold text-indigo-600">${Math.round(course.avg)}</td>
+                                            <td class="px-6 py-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">${course.status}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                     ${createInsightsCard(DATA.insights.skills)}
                 </div>
             `;
+        }
+        
+        function toggleSkillCategory(index) {
+            const content = document.getElementById(`skill-content-${index}`);
+            const icon = document.getElementById(`icon-skill-${index}`);
+            
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('open');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function switchDisciplinaryTab(tab) {
+            disciplinaryTab = tab;
+            // Update Tab UI
+            document.getElementById('tab-disc-english').className = tab === 'english' ? 'bg-white text-indigo-600 shadow-sm px-3 py-1.5 text-xs font-bold rounded-md transition-all' : 'text-slate-500 hover:text-slate-700 px-3 py-1.5 text-xs font-bold rounded-md transition-all';
+            document.getElementById('tab-disc-math').className = tab === 'math' ? 'bg-white text-indigo-600 shadow-sm px-3 py-1.5 text-xs font-bold rounded-md transition-all' : 'text-slate-500 hover:text-slate-700 px-3 py-1.5 text-xs font-bold rounded-md transition-all';
+            
+            // Show/Hide Content
+            document.getElementById('content-disc-english').className = tab === 'english' ? 'block p-6 space-y-6 fade-in' : 'hidden';
+            document.getElementById('content-disc-math').className = tab === 'math' ? 'block p-6 space-y-6 fade-in' : 'hidden';
         }
 
         // --- MODAL LOGIC ---
@@ -1068,34 +1256,18 @@
                         <div>
                             <div class="flex items-center gap-3 mb-1">
                                 <h2 class="text-2xl font-bold text-slate-800" style="color: ${data.color}">${titleMap[type]}</h2>
-                                <span class="bg-slate-100 px-3 py-1 rounded-full text-sm font-bold text-slate-600">ציון: ${data.score}</span>
                             </div>
                             <p class="text-slate-500">פירוט מדדים ונתונים</p>
                         </div>
                         <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2 bg-white border border-slate-100 rounded-xl p-4 shadow-sm h-80">
+                    <div class="w-full">
+                        <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm h-96">
                             <h4 class="font-bold text-slate-700 mb-4">השוואת מדדים</h4>
-                            <div class="h-64">
+                            <div class="h-80 w-full">
                                 <canvas id="chart-learning-drilldown"></canvas>
                             </div>
-                        </div>
-                        
-                        <div class="space-y-3">
-                            <h4 class="font-bold text-slate-700">פירוט מדדים</h4>
-                            ${data.metrics.map(m => `
-                                <div class="bg-white p-3 rounded-lg border border-slate-100 flex flex-col gap-2">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm font-medium text-slate-600">${m.name}</span>
-                                        <span class="font-bold text-slate-800">${m.score}%</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                        <div class="h-full rounded-full" style="width: ${m.score}%; background-color: ${data.color}"></div>
-                                    </div>
-                                </div>
-                            `).join('')}
                         </div>
                     </div>
                 </div>
