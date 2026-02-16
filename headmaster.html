@@ -220,20 +220,44 @@
         const DATA = {
             insights: {
                 infrastructure: {
-                    main: "זוהתה ירידה בשימוש בכרומבוקים בשכבה ח' בשעות הצהריים - מומלץ לבדוק תקינות רשת.",
-                    focus: ["כיתה ח'3 - דיווחים על תקלות חיבור", "מעבדת מחשבים 2 - עומס רשת"]
+                    main: "זוהתה ירידה עקבית בביצוע מפגשי הליווי בהיסטוריה בשכבה ח'. נדרשת שיחה עם רכזת המקצוע להסרת חסמים.",
+                    atRiskLabel: "מורים/כיתות במיקוד",
+                    atRiskCount: 3,
+                    focus: [
+                        { name: "מיכל אבני - היסטוריה", val: "30% ביצוע" },
+                        { name: "כיתה ח'3", val: "לא התקיים ליווי חודש" },
+                        { name: "צוות תנ\"ך", val: "דיווח חלקי בלבד" }
+                    ]
                 },
                 learning: {
-                    main: "שיפור ניכר בציוני מדעים בשכבה ט', אך נדרשת התערבות בהיסטוריה.",
-                    focus: ["קבוצת תגבור - מתמטיקה ז'", "תלמידים בסיכון לנשירה - כיתה י'1"]
+                    main: "שיפור ניכר בציוני מדעים בשכבה ט', אך נדרשת התערבות דחופה בהיסטוריה לאור ריבוי נכשלים.",
+                    atRiskLabel: "תלמידים בסיכון (ציונים)",
+                    atRiskCount: 14,
+                    focus: [
+                        { name: "דניאל כהן (ח'2)", val: "ממוצע 45" },
+                        { name: "רונית ששון (ט'1)", val: "ירידה חדה במתמטיקה" },
+                        { name: "קבוצת תגבור ז'3", val: "נוכחות דלה" },
+                        { name: "אבי ביטון (י'1)", val: "3 נכשלים" }
+                    ]
                 },
                 tzaam: {
-                    main: "מדדי תחושת שייכות במגמת עלייה, אך מסוגלות עצמית דורשת חיזוק.",
-                    focus: ["תלמידים חדשים בשכבה ז'", "קבוצות מנהיגות צעירה"]
+                    main: "מדדי תחושת שייכות במגמת עלייה, אך זוהתה קבוצת תלמידים עם ירידה חדה במדד 'מסוגלות עצמית'.",
+                    atRiskLabel: "תלמידים בסיכון (רגשי)",
+                    atRiskCount: 8,
+                    focus: [
+                        { name: "יוסי אברהמי", val: "דיווח על בדידות" },
+                        { name: "נועה קירל", val: "ירידה במוטיבציה" },
+                        { name: "תלמידים חדשים ז'", val: "קשיי הסתגלות" }
+                    ]
                 },
                 skills: {
-                    main: "שליטה גבוהה באוריינות דיגיטלית, יש לחזק מיומנויות טיעון וחשיבה ביקורתית.",
-                    focus: ["קורס דיבייט - הרחבת פעילות", "שילוב מיומנויות טיעון בשיעורי שפה"]
+                    main: "שליטה גבוהה באוריינות דיגיטלית, אך נדרש חיזוק משמעותי במיומנות 'טיעון' בקבוצות המצוינות.",
+                    atRiskLabel: "קבוצות לחיזוק מיומנויות",
+                    atRiskCount: 2,
+                    focus: [
+                        { name: "קבוצת מצוינות ח'", val: "טיעון (65%)" },
+                        { name: "כיתה ט'2", val: "חשיבה ביקורתית" }
+                    ]
                 }
             },
             chromebooks: {
@@ -288,7 +312,7 @@
                     score: 84,
                     color: '#f43f5e',
                     metrics: [
-                        { name: "רגש", score: 88 },
+                        { name: "רגש חיובי", score: 88 },
                         { name: "עניין בלמידה", score: 82 },
                         { name: "הנאה מלמידה", score: 75 }
                     ]
@@ -430,8 +454,10 @@
         }
 
         // --- HELPER: INSIGHTS CARD ---
-        function createInsightsCard(data) {
+        function createInsightsCard(data, typeId) {
             if (!data) return '';
+            const uniqueId = `insights-${typeId || Math.random().toString(36).substr(2, 9)}`;
+            
             return `
                 <div class="bg-gradient-to-l from-indigo-50 to-white rounded-2xl p-6 shadow-sm border border-indigo-100 mb-8 mt-2 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-2 h-full bg-indigo-500"></div>
@@ -443,16 +469,24 @@
                             </h3>
                             <p class="text-slate-700 font-medium leading-relaxed">${data.main}</p>
                         </div>
-                        <div class="w-full md:w-1/3 bg-white/60 rounded-xl p-4 border border-indigo-50">
-                            <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wide">קבוצות ותלמידים למיקוד</h4>
-                            <ul class="space-y-2">
-                                ${data.focus.map(item => `
-                                    <li class="flex items-start gap-2 text-sm text-slate-700">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 flex-shrink-0"></span>
-                                        ${item}
-                                    </li>
-                                `).join('')}
-                            </ul>
+                        <div class="w-full md:w-1/3 bg-white/80 rounded-xl border border-rose-100 overflow-hidden shadow-sm">
+                            <div class="p-4 bg-rose-50 border-b border-rose-100 flex justify-between items-center cursor-pointer hover:bg-rose-100 transition-colors" onclick="document.getElementById('${uniqueId}').classList.toggle('hidden'); document.getElementById('icon-${uniqueId}').classList.toggle('rotate-180')">
+                                <div>
+                                    <div class="text-xs font-bold text-rose-500 uppercase tracking-wide mb-1">${data.atRiskLabel || 'תלמידים בסיכון'}</div>
+                                    <div class="text-3xl font-extrabold text-rose-600 leading-none">${data.atRiskCount}</div>
+                                </div>
+                                <i id="icon-${uniqueId}" data-lucide="chevron-down" class="w-5 h-5 text-rose-400 transition-transform duration-300"></i>
+                            </div>
+                            <div id="${uniqueId}" class="hidden bg-white p-3 max-h-48 overflow-y-auto">
+                                <ul class="space-y-2">
+                                    ${data.focus.map(item => `
+                                        <li class="flex justify-between items-center text-sm border-b border-slate-50 last:border-0 pb-2 last:pb-0">
+                                            <span class="font-bold text-slate-700">${item.name}</span>
+                                            <span class="text-xs bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full">${item.val}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -642,7 +676,7 @@
             }
 
             // Insights Card (Bottom)
-            html += createInsightsCard(DATA.insights.infrastructure);
+            html += createInsightsCard(DATA.insights.infrastructure, 'infra');
 
             html += '</div>';
             container.innerHTML = html;
@@ -775,7 +809,7 @@
             `;
             
             // Insights Card
-            const insightsHTML = createInsightsCard(DATA.insights.learning);
+            const insightsHTML = createInsightsCard(DATA.insights.learning, 'learning');
 
             container.innerHTML = pedagogyControlsHTML + gridHTML + wholeChildHTML + insightsHTML;
 
@@ -955,7 +989,7 @@
                             </div>
                         </div>
                     </div>
-                     ${createInsightsCard(DATA.insights.tzaam)}
+                     ${createInsightsCard(DATA.insights.tzaam, 'tzaam')}
                 </div>
             `;
         }
@@ -1089,7 +1123,7 @@
                     <div>
                          <div class="flex items-center gap-3 mb-4">
                             <div class="bg-indigo-100 p-2 rounded-lg text-indigo-700"><i data-lucide="heart-handshake" class="w-5 h-5"></i></div>
-                            <h2 class="text-xl font-bold text-slate-800">קורסים ייעודיים (SEL)</h2>
+                            <h2 class="text-xl font-bold text-slate-800">קורסי מיומנויות</h2>
                         </div>
                         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                             <table class="w-full text-right">
@@ -1122,7 +1156,7 @@
                     <div class="mt-8">
                          <div class="flex items-center gap-3 mb-4">
                             <div class="bg-emerald-100 p-2 rounded-lg text-emerald-700"><i data-lucide="brain-circuit" class="w-5 h-5"></i></div>
-                            <h2 class="text-xl font-bold text-slate-800">קורסים ייעודיים - אסטרטגיות למידה</h2>
+                            <h2 class="text-xl font-bold text-slate-800">קורסי אסטרטגיות למידה</h2>
                         </div>
                         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                             <table class="w-full text-right">
@@ -1150,7 +1184,7 @@
                             </table>
                         </div>
                     </div>
-                     ${createInsightsCard(DATA.insights.skills)}
+                     ${createInsightsCard(DATA.insights.skills, 'skills')}
                 </div>
             `;
         }
